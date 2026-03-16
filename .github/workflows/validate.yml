@@ -1,0 +1,105 @@
+name: PR 校验
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-structure:
+    name: 文件结构检查
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 检查 Skill 目录结构
+        run: |
+          echo "=== 检查 Skills ==="
+          errors=0
+
+          for skill_dir in skills/*/*/; do
+            # 跳过不存在的情况
+            [ -d "$skill_dir" ] || continue
+
+            skill_name=$(basename "$skill_dir")
+            echo "检查 Skill: $skill_name"
+
+            # 必须有 SKILL.md
+            if [ ! -f "${skill_dir}SKILL.md" ]; then
+              echo "::error::${skill_dir} 缺少 SKILL.md 文件"
+              errors=$((errors + 1))
+            fi
+
+            # SKILL.md 不能为空
+            if [ -f "${skill_dir}SKILL.md" ] && [ ! -s "${skill_dir}SKILL.md" ]; then
+              echo "::error::${skill_dir}SKILL.md 文件为空"
+              errors=$((errors + 1))
+            fi
+
+            # 目录名必须是小写字母和连字符
+            if ! echo "$skill_name" | grep -qE '^[a-z][a-z0-9-]*$'; then
+              echo "::error::目录名 '$skill_name' 不符合命名规范（只能用小写字母、数字和连字符）"
+              errors=$((errors + 1))
+            fi
+          done
+
+          echo "=== 检查 Prompts ==="
+          for prompt_dir in prompts/*/*/*/; do
+            [ -d "$prompt_dir" ] || continue
+
+            prompt_name=$(basename "$prompt_dir")
+            echo "检查 Prompt: $prompt_name"
+
+            # 必须有 prompt.md
+            if [ ! -f "${prompt_dir}prompt.md" ]; then
+              echo "::error::${prompt_dir} 缺少 prompt.md 文件"
+              errors=$((errors + 1))
+            fi
+          done
+
+          if [ $errors -gt 0 ]; then
+            echo "::error::共发现 $errors 个问题，请修复后重新提交"
+            exit 1
+          fi
+
+          echo "✅ 所有检查通过"
+
+  secret-scan:
+    name: 敏感信息扫描
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 扫描常见敏感信息模式
+        run: |
+          echo "=== 扫描敏感信息 ==="
+          errors=0
+
+          # 定义敏感模式
+          patterns=(
+            'AKIA[0-9A-Z]{16}'                    # AWS Access Key
+            'sk-[a-zA-Z0-9]{20,}'                 # OpenAI / Stripe key
+            'ghp_[a-zA-Z0-9]{36}'                 # GitHub Personal Token
+            'gho_[a-zA-Z0-9]{36}'                 # GitHub OAuth Token
+            'xoxb-[0-9]+-[a-zA-Z0-9]+'            # Slack Bot Token
+            'xoxp-[0-9]+-[a-zA-Z0-9]+'            # Slack User Token
+            'sk-ant-[a-zA-Z0-9-]+'                 # Anthropic API Key
+            'password\s*[:=]\s*["\x27][^"\x27]+'  # password = "xxx"
+            'api_key\s*[:=]\s*["\x27][^"\x27]+'   # api_key = "xxx"
+            'token\s*[:=]\s*["\x27][^"\x27]+'     # token = "xxx"
+          )
+
+          for pattern in "${patterns[@]}"; do
+            matches=$(grep -rn -E "$pattern" --include="*.md" --include="*.yaml" --include="*.yml" --include="*.sh" --include="*.py" --include="*.json" . 2>/dev/null | grep -v '.github/workflows/' || true)
+            if [ -n "$matches" ]; then
+              echo "::error::发现疑似敏感信息:"
+              echo "$matches"
+              errors=$((errors + 1))
+            fi
+          done
+
+          if [ $errors -gt 0 ]; then
+            echo "::error::发现疑似敏感信息，请检查并移除"
+            exit 1
+          fi
+
+          echo "✅ 未发现敏感信息"

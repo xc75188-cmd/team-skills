@@ -1,0 +1,12 @@
+# 默认所有文件需要至少一位管理员 review
+*                       @gavin-yang
+
+# Skills
+skills/                 @gavin-yang
+
+# Prompts
+prompts/                @gavin-yang
+
+# CI 和仓库配置的修改需要管理员 review
+.github/                @gavin-yang
+CODEOWNERS              @gavin-yang
