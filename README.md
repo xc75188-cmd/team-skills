@@ -85,26 +85,52 @@ git push origin feat/add-你的skill名
 
 **注意事项：**
 
-- 不要直接推送到 `main` 分支（已启用分支保护，推送会被拒绝）
+- **禁止直接推送到 `main` 分支**，所有变更必须通过 PR 提交
 - 每个 PR 需要至少 1 位成员 review 并 approve 后才能合并
-- CI 会自动检查文件结构和敏感信息，检查不通过的 PR 无法合并
+- CI 会自动检查文件结构和敏感信息，请确保 CI 通过后再请求 review
 - PR 合并后远程分支会自动删除，本地分支需要手动清理：`git branch -d feat/add-xxx`
 
-## 目录命名规范
+## 命名规范
 
-- Skill 目录名：小写字母，单词用 `-` 连接，如 `code-review`、`meeting-summary`
-- Prompt 目录名：同上
-- 分类目录名：按用途划分，现有 `code`、`writing`、`research`、`automation`、`communication`
+### 目录命名
+
+- 全部使用**小写英文字母**，单词之间用 `-` 连接
+- 不要用下划线 `_`、驼峰命名、中文或空格
+- 分类目录固定为：`code`、`writing`、`research`、`automation`、`communication`
+
+| 示例 | 是否合规 |
+|------|----------|
+| `code-review` | ✅ |
+| `meeting-summary` | ✅ |
+| `CodeReview` | ❌ 不要用驼峰 |
+| `code_review` | ❌ 不要用下划线 |
+| `会议总结` | ❌ 不要用中文 |
+
+### 分支命名
+
+| 操作 | 格式 | 示例 |
+|------|------|------|
+| 新增 | `feat/add-xxx` | `feat/add-code-review-skill` |
+| 修改 | `fix/update-xxx` | `fix/update-meeting-summary` |
+| 删除 | `chore/remove-xxx` | `chore/remove-deprecated-skill` |
+| 文档 | `docs/update-xxx` | `docs/update-contributing` |
+
+### Commit 消息
+
+格式：`类型: 简短描述`
+
+| 类型 | 用途 | 示例 |
+|------|------|------|
+| `feat` | 新增 Skill 或 Prompt | `feat: 添加 code-review skill` |
+| `fix` | 修改已有内容 | `fix: 修正 meeting-summary 输出格式` |
+| `docs` | 文档更新 | `docs: 更新 README 安装说明` |
+| `chore` | 删除、维护、CI 配置等 | `chore: 移除废弃的 old-prompt` |
 
 ## 安全须知
 
-- **禁止** 在任何文件中包含 API Key、Token、密码等敏感信息
+- **禁止**在任何文件中包含 API Key、Token、密码等敏感信息
 - Shell 脚本和涉及数据访问的 Skill 需要至少 2 人 review
 - CI 会自动扫描常见的 secret 泄露模式
-
-## 维护者
-
-- @gavin-yang（仓库管理员）
 
 ---
 
